@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chlwcs"
+version = "0.1.0"
+description = "OGC WCS over Bhoonidhi EOS-06 OCM-3 chlorophyll composites (GeoServer)"
+requires-python = ">=3.11"
+dependencies = [
+  "xarray", "netCDF4", "numpy", "rasterio", "requests", "waitress",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "real: needs data/processed cube built from the real Bhoonidhi files",
+  "geoserver: boots GeoServer (needs GEOSERVER_HOME or ~/geoserver)",
+]

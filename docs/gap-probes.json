@@ -1,0 +1,240 @@
+[
+  {
+    "check": "Bhoonidhi API documentation page",
+    "url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/",
+    "utc": "2026-10-05T21:34:16Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/",
+    "content_type": "text/html",
+    "bytes": 60660,
+    "title": "Bhoonidhi API Specification",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html>  <html lang=\"en\">      <head>          <meta charset=\"UTF-8\">          <!--<meta https-equiv=\"X-UA-Compatible\" content=\"IE=edge\">-->          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">          <title>Bhoonidhi API Specification</title>          <link rel="
+  },
+  {
+    "check": "Bhoonidhi API: STAC landing page",
+    "url": "https://bhoonidhi-api.nrsc.gov.in/",
+    "utc": "2026-10-05T21:34:17Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/",
+    "content_type": "text/html",
+    "bytes": 60660,
+    "title": "Bhoonidhi API Specification",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html>  <html lang=\"en\">      <head>          <meta charset=\"UTF-8\">          <!--<meta https-equiv=\"X-UA-Compatible\" content=\"IE=edge\">-->          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">          <title>Bhoonidhi API Specification</title>          <link rel="
+  },
+  {
+    "check": "Bhoonidhi API: OGC conformance declaration",
+    "url": "https://bhoonidhi-api.nrsc.gov.in/conformance",
+    "utc": "2026-10-05T21:34:18Z",
+    "status": 404,
+    "final_url": "https://bhoonidhi-api.nrsc.gov.in/conformance",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 36,
+    "title": null,
+    "is_ogc_capabilities_xml": false,
+    "snippet": "{\"error_msg\":\"404 Route Not Found\"} "
+  },
+  {
+    "check": "Bhoonidhi API: OGC API collections",
+    "url": "https://bhoonidhi-api.nrsc.gov.in/collections",
+    "utc": "2026-10-05T21:34:18Z",
+    "status": 404,
+    "final_url": "https://bhoonidhi-api.nrsc.gov.in/collections",
+    "content_type": "text/plain; charset=utf-8",
+    "bytes": 36,
+    "title": null,
+    "is_ogc_capabilities_xml": false,
+    "snippet": "{\"error_msg\":\"404 Route Not Found\"} "
+  },
+  {
+    "check": "Bhoonidhi API: STAC collections (needs login)",
+    "url": "https://bhoonidhi-api.nrsc.gov.in/data/collections",
+    "utc": "2026-10-05T21:34:18Z",
+    "status": 401,
+    "final_url": "https://bhoonidhi-api.nrsc.gov.in/data/collections",
+    "content_type": "application/json",
+    "bytes": 105,
+    "title": null,
+    "is_ogc_capabilities_xml": false,
+    "snippet": "{\"ErrorCode\":\"401\",\"Description\":\"UNAUTHORIZED\",\"Action\":\"Invalid session detected! Please login again.\"}"
+  },
+  {
+    "check": "Bhoonidhi API: WCS GetCapabilities",
+    "url": "https://bhoonidhi-api.nrsc.gov.in/?service=WCS&request=GetCapabilities",
+    "utc": "2026-10-05T21:34:19Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/",
+    "content_type": "text/html",
+    "bytes": 60660,
+    "title": "Bhoonidhi API Specification",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html>  <html lang=\"en\">      <head>          <meta charset=\"UTF-8\">          <!--<meta https-equiv=\"X-UA-Compatible\" content=\"IE=edge\">-->          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">          <title>Bhoonidhi API Specification</title>          <link rel="
+  },
+  {
+    "check": "Bhoonidhi API: WMS GetCapabilities",
+    "url": "https://bhoonidhi-api.nrsc.gov.in/?service=WMS&request=GetCapabilities",
+    "utc": "2026-10-05T21:34:19Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/",
+    "content_type": "text/html",
+    "bytes": 60660,
+    "title": "Bhoonidhi API Specification",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html>  <html lang=\"en\">      <head>          <meta charset=\"UTF-8\">          <!--<meta https-equiv=\"X-UA-Compatible\" content=\"IE=edge\">-->          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">          <title>Bhoonidhi API Specification</title>          <link rel="
+  },
+  {
+    "check": "Bhoonidhi portal: WCS GetCapabilities",
+    "url": "https://bhoonidhi.nrsc.gov.in/?service=WCS&request=GetCapabilities",
+    "utc": "2026-10-05T21:34:20Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi/home.html",
+    "content_type": "text/html",
+    "bytes": 36515,
+    "title": "Bhoonidhi Home",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html>  <html lang=\"en\">        <head>          <meta charset=\"utf-8\">          <meta content=\"width=device-width, initial-scale=1.0\" name=\"viewport\">            <title>Bhoonidhi Home</title>          <link rel=\"icon\" href=\"images/isroLogo.jpg\" type=\"image/gif\" sizes=\"16x16\">          <meta"
+  },
+  {
+    "check": "Bhoonidhi portal: CSW GetCapabilities",
+    "url": "https://bhoonidhi.nrsc.gov.in/?service=CSW&request=GetCapabilities",
+    "utc": "2026-10-05T21:34:21Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi/home.html",
+    "content_type": "text/html",
+    "bytes": 36515,
+    "title": "Bhoonidhi Home",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html>  <html lang=\"en\">        <head>          <meta charset=\"utf-8\">          <meta content=\"width=device-width, initial-scale=1.0\" name=\"viewport\">            <title>Bhoonidhi Home</title>          <link rel=\"icon\" href=\"images/isroLogo.jpg\" type=\"image/gif\" sizes=\"16x16\">          <meta"
+  },
+  {
+    "check": "Unofficial STAC mirror: landing page",
+    "url": "https://bhoonidhi-stac.ecotrakr.in/",
+    "utc": "2026-10-05T21:34:21Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi-stac.ecotrakr.in/",
+    "content_type": "application/json",
+    "bytes": 2800,
+    "title": null,
+    "is_ogc_capabilities_xml": false,
+    "snippet": "{\"type\":\"Catalog\",\"id\":\"stac-fastapi\",\"title\":\"stac-fastapi\",\"description\":\"stac-fastapi\",\"stac_version\":\"1.0.0\",\"conformsTo\":[\"http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2\",\"http://www.opengis.net/spec/cql2/1.0/conf/cql2-json\",\"http://www.opengis.net/spec/cql2/1.0/conf/cql2-text\",\"http://ww"
+  },
+  {
+    "check": "Unofficial STAC mirror: conformance",
+    "url": "https://bhoonidhi-stac.ecotrakr.in/conformance",
+    "utc": "2026-10-05T21:34:23Z",
+    "status": 200,
+    "final_url": "https://bhoonidhi-stac.ecotrakr.in/conformance",
+    "content_type": "application/json",
+    "bytes": 1338,
+    "title": null,
+    "is_ogc_capabilities_xml": false,
+    "snippet": "{\"conformsTo\":[\"http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2\",\"http://www.opengis.net/spec/cql2/1.0/conf/cql2-json\",\"http://www.opengis.net/spec/cql2/1.0/conf/cql2-text\",\"http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/simple-query\",\"http://www.opengis.net/spec/ogcapi-features-1/1.0/con",
+    "conformsTo": [
+      "http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2",
+      "http://www.opengis.net/spec/cql2/1.0/conf/cql2-json",
+      "http://www.opengis.net/spec/cql2/1.0/conf/cql2-text",
+      "http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/simple-query",
+      "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+      "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
+      "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+      "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter",
+      "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter",
+      "https://api.stacspec.org/v1.0.0-rc.1/collection-search",
+      "https://api.stacspec.org/v1.0.0-rc.1/collection-search#fields",
+      "https://api.stacspec.org/v1.0.0-rc.1/collection-search#filter",
+      "https://api.stacspec.org/v1.0.0-rc.1/collection-search#free-text",
+      "https://api.stacspec.org/v1.0.0-rc.2/item-search#filter",
+      "https://api.stacspec.org/v1.0.0/collections",
+      "https://api.stacspec.org/v1.0.0/core",
+      "https://api.stacspec.org/v1.0.0/item-search",
+      "https://api.stacspec.org/v1.0.0/item-search#fields",
+      "https://api.stacspec.org/v1.0.0/ogcapi-features",
+      "https://api.stacspec.org/v1.0.0/ogcapi-features#fields",
+      "https://api.stacspec.org/v1.1.0/collection-search#sort",
+      "https://api.stacspec.org/v1.1.0/item-search#sort",
+      "https://api.stacspec.org/v1.1.0/ogcapi-features#sort"
+    ],
+    "declares_edr": false
+  },
+  {
+    "check": "MOSDAC: home",
+    "url": "https://mosdac.gov.in/",
+    "utc": "2026-10-05T21:34:24Z",
+    "status": 200,
+    "final_url": "https://mosdac.gov.in/",
+    "content_type": "text/html; charset=UTF-8",
+    "bytes": 63595,
+    "title": "Meteorological &amp; Oceanographic Satellite Data Archival Centre",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html> <html lang=\"en\" dir=\"ltr\" style=\"--color--primary-hue:210;--color--primary-saturation:90%;--color--primary-lightness:36\">   <head><script src='/common/js/purify.min.js'></script><script src='/common/js/trusted-policy.js'></script><script src='/common/js/mat.js'></script>     <meta ch"
+  },
+  {
+    "check": "MOSDAC: OGC conformance declaration",
+    "url": "https://mosdac.gov.in/conformance",
+    "utc": "2026-10-05T21:34:25Z",
+    "status": 404,
+    "final_url": "https://mosdac.gov.in/conformance",
+    "content_type": "text/html; charset=UTF-8",
+    "bytes": 43277,
+    "title": "Page Not Found | Meteorological &amp; Oceanographic Satellite Data Archival Centre",
+    "is_ogc_capabilities_xml": false,
+    "snippet": "<!DOCTYPE html> <html lang=\"en\" dir=\"ltr\" style=\"--color--primary-hue:210;--color--primary-saturation:90%;--color--primary-lightness:36\">   <head>     <meta charset=\"utf-8\" /> <style>body #backtotop {background: #252222;border-color: #161515;color: #f5eeee;}body #backtotop:hover { background: #0a090"
+  },
+  {
+    "check": "MOSDAC: WCS GetCapabilities",
+    "url": "https://mosdac.gov.in/?service=WCS&request=GetCapabilities",
+    "utc": "2026-10-05T21:34:26Z",
+    "status": 403,
+    "final_url": "https://mosdac.gov.in/?service=WCS&request=GetCapabilities",
+    "content_type": "text/html; charset=UTF-8",
+    "bytes": 52,
+    "title": null,
+    "is_ogc_capabilities_xml": false,
+    "snippet": "No Resource Exists. Kindly recheck the web address. "
+  },
+  {
+    "check": "Vista web app: OGC operation names in its page and script",
+    "url": "https://bhoonidhi.nrsc.gov.in/vista",
+    "utc": "2026-10-05T21:34:27Z",
+    "counts": {
+      "page": {
+        "bytes": 35062,
+        "WMS": 2,
+        "WCS": 0,
+        "GetMap": 0,
+        "GetFeatureInfo": 0,
+        "GetCoverage": 0,
+        "GetCapabilities": 0
+      },
+      "vista.js": {
+        "bytes": 45307,
+        "WMS": 1,
+        "WCS": 0,
+        "GetMap": 0,
+        "GetFeatureInfo": 0,
+        "GetCoverage": 0,
+        "GetCapabilities": 0
+      }
+    }
+  },
+  {
+    "check": "Official API spec: OGC keyword counts",
+    "url": "https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/",
+    "utc": "2026-10-05T21:34:27Z",
+    "counts": {
+      "WMS": 0,
+      "WCS": 0,
+      "WFS": 0,
+      "CSW": 0,
+      "WPS": 0,
+      "SOS": 0,
+      "SensorThings": 0,
+      "OGC API": 0,
+      "STAC": 12
+    },
+    "chlorophyll_collections_listed": [
+      "EOS-06_OCM-GAC_Chlorophyll_8day_4km"
+    ]
+  }
+]

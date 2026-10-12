@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+data/raw/
+.cache/
+.pytest_cache/
+*.egg-info/
+data/wcs/
+data/geoserver/
+tools/
+data/public_url.txt
+Datasets/

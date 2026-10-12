@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bhoonidhi Chlorophyll WCS</title>
+<meta name="description" content="OGC Web Coverage Service over ISRO/NRSC Bhoonidhi EOS-06 OCM-3 chlorophyll-a 8-day composites">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+  :root {
+    --ink: #0f2a33; --muted: #4d6670; --line: #d5e2e6; --panel: #ffffff; --bg: #eef4f5;
+    --accent: #0b6e7f; --accent-ink: #ffffff; --warn: #9a3412; --ok: #166534; --code: #f3f7f8;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg);
+         display: grid; grid-template-rows: auto 1fr auto; }
+  header { background: var(--ink); color: #fff; padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 8px 24px;
+           align-items: baseline; justify-content: space-between; }
+  header h1 { font-size: 20px; margin: 0; letter-spacing: .2px; }
+  header p { margin: 2px 0 0; color: #b9d3da; font-size: 13.5px; max-width: 70ch; }
+  header nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; }
+  header nav a { color: #e6f3f6; }
+  main { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; min-height: 0; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 16px 18px 24px; }
+  #map { min-height: 420px; }
+  section { padding: 12px 0 14px; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 8px; }
+  .step { display: inline-block; min-width: 20px; height: 20px; border-radius: 10px; background: var(--accent);
+          color: var(--accent-ink); text-align: center; font-size: 12px; line-height: 20px; margin-right: 6px; }
+  label { display: block; font-weight: 600; margin-bottom: 4px; }
+  select, button { font: inherit; }
+  select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  button { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent);
+           color: var(--accent-ink); cursor: pointer; }
+  button.secondary { background: #fff; color: var(--accent); }
+  button:disabled { opacity: .55; cursor: progress; }
+  button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .legend { margin-top: 10px; }
+  .legend .bar { height: 12px; border-radius: 3px; border: 1px solid var(--line); }
+  .legend .ticks { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .stats { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  #chart svg { width: 100%; height: auto; display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  th, td { text-align: left; padding: 3px 4px; border-bottom: 1px solid #edf2f4; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.current td { background: #e6f4f6; font-weight: 600; }
+  .nodata { color: var(--muted); font-style: italic; }
+  code.req { display: block; white-space: pre-wrap; word-break: break-all; background: var(--code); border: 1px solid var(--line);
+             border-radius: 6px; padding: 8px; font-size: 11.5px; max-height: 140px; overflow: auto; }
+  .links a { margin-right: 12px; font-size: 13px; }
+  #status { margin: 10px 0 0; font-size: 13.5px; min-height: 1.4em; }
+  #status.error { color: var(--warn); }
+  #status.ok { color: var(--ok); }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; margin: 0; }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; }
+  footer { font-size: 12px; color: var(--muted); padding: 8px 20px; border-top: 1px solid var(--line); background: var(--panel); }
+  .chl-layer { image-rendering: pixelated; }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 55vh auto; }
+    #map { order: -1; min-height: 55vh; }
+    aside { border-right: 0; border-top: 1px solid var(--line); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Bhoonidhi Chlorophyll WCS</h1>
+    <p>OGC Web Coverage Service over ISRO/NRSC Bhoonidhi's EOS-06 (Oceansat-3) OCM-3 chlorophyll-a 8-day composites.
+       Pick a composite, see the map, click the sea for a time series. Every view below is a real WCS request.</p>
+  </div>
+  <nav aria-label="WCS documents">
+    <a id="lnkCaps" href="#" target="_blank" rel="noopener">GetCapabilities</a>
+    <a id="lnkDesc" href="#" target="_blank" rel="noopener">DescribeCoverage</a>
+  </nav>
+</header>
+
+<main>
+  <aside>
+    <section>
+      <h2><span class="step">1</span>Composite window</h2>
+      <label for="window">8-day window (UTC)</label>
+      <select id="window" aria-describedby="windowHint"></select>
+      <p class="hint" id="windowHint">Each value is an 8-day composite. No-data cells (cloud, land, no satellite pass) are left transparent.</p>
+    </section>
+
+    <section>
+      <h2><span class="step">2</span>Map</h2>
+      <div class="row">
+        <button id="btnMap" type="button">Show chlorophyll for this view</button>
+        <label style="font-weight:400; margin:0"><input type="checkbox" id="auto" checked> refresh on pan/zoom</label>
+      </div>
+      <div class="legend" aria-label="Colour scale, chlorophyll-a in mg per cubic metre, logarithmic">
+        <div class="bar" id="legendBar"></div>
+        <div class="ticks"><span>0.03</span><span>0.1</span><span>0.3</span><span>1</span><span>3</span><span>10 mg m&#8315;&#179;</span></div>
+      </div>
+      <div class="stats" id="mapStats"></div>
+    </section>
+
+    <section>
+      <h2><span class="step">3</span>Time series at a point</h2>
+      <p class="hint" id="seriesHint">Click the sea inside the dashed box. One WCS request returns every window at that cell (one band per window).</p>
+      <div id="chart" aria-live="polite"></div>
+      <table id="series" hidden><thead><tr><th>Window</th><th class="num">mg m&#8315;&#179;</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>Last WCS request</h2>
+      <code class="req" id="reqUrl">(none yet)</code>
+      <div class="row links">
+        <a id="reqOpen" href="#" target="_blank" rel="noopener" hidden>Open</a>
+        <a id="reqDownload" href="#" download hidden>Download GeoTIFF</a>
+        <button id="btnCopy" type="button" class="secondary" hidden>Copy URL</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section>
+      <h2>About the data</h2>
+      <dl class="facts">
+        <dt>Coverage</dt><dd><code>ocean__chl</code> (band <code>chlorophyll_a</code>, mg m&#8315;&#179;)</dd>
+        <dt>Source</dt><dd>EOS-06 OCM-3 GAC L3, 4 km, Bhoonidhi</dd>
+        <dt>Area</dt><dd>40&ndash;100&deg;E, 10&deg;S&ndash;30&deg;N</dd>
+        <dt>Windows</dt><dd id="factWindows">&ndash;</dd>
+        <dt>CRS</dt><dd>EPSG:4326 (also 3857, UTM 43N/44N)</dd>
+        <dt>Standard</dt><dd>OGC WCS 2.0.1 (also 1.1.1, 1.0.0)</dd>
+      </dl>
+    </section>
+  </aside>
+  <div id="map" role="region" aria-label="Map of the coverage area"></div>
+</main>
+
+<footer>
+  Unofficial student coursework, not affiliated with ISRO/NRSC. Source data &copy; National Remote Sensing Centre, ISRO
+  (Bhoonidhi open data). Base map &copy; OpenStreetMap contributors.
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script>
+"use strict";
+const OWS = "geoserver/ows";                       // relative: works on localhost and behind the public tunnel
+const COVERAGE = "ocean__chl";
+const NODATA = -9999;
+const EXTENT = { w: 40, s: -10, e: 100, n: 30 };
+const CELL = 360 / 8640;                           // native grid step (degrees)
+const MAX_PX = 720;
+const VIRIDIS = ["#440154", "#482878", "#3e4989", "#31688e", "#26828e", "#1f9e89", "#35b779", "#6ece58", "#b5de2b", "#fde725"];
+const LOG_MIN = Math.log10(0.03), LOG_MAX = Math.log10(10);
+
+const $ = (id) => document.getElementById(id);
+let windows = [];
+let overlay = null, marker = null, busy = false, seriesPoint = null;
+
+// ---------- WCS requests --------------------------------------------------------------------------
+const fmt = (x) => Number(x).toFixed(6);
+const wcsTime = (iso) => iso.replace(/Z$/, ".000Z");
+
+function wcsParams(base) {
+  const p = new URLSearchParams({ service: "WCS", version: "2.0.1", ...base });
+  return p;
+}
+
+function getCoverageUrl({ bbox, point, time, timeEnd, size }) {
+  const p = wcsParams({ request: "GetCoverage", coverageId: COVERAGE, format: "image/tiff", "geotiff:compression": "DEFLATE" });
+  if (bbox) { p.append("subset", `Long(${fmt(bbox.w)},${fmt(bbox.e)})`); p.append("subset", `Lat(${fmt(bbox.s)},${fmt(bbox.n)})`); }
+  if (point) { p.append("subset", `Long(${fmt(point.lng)})`); p.append("subset", `Lat(${fmt(point.lat)})`); }
+  p.append("subset", timeEnd ? `time("${wcsTime(time)}","${wcsTime(timeEnd)}")` : `time("${wcsTime(time)}")`);
+  if (size) p.append("scalesize", `i(${size[0]}),j(${size[1]})`);
+  return `${OWS}?${p}`;
+}
+
+async function fetchCoverage(url) {
+  showRequest(url);
+  const resp = await fetch(url);
+  const type = resp.headers.get("Content-Type") || "";
+  if (!resp.ok || !type.startsWith("image/tiff")) {
+    const text = await resp.text();
+    const m = text.match(/<ows:ExceptionText>([\s\S]*?)<\/ows:ExceptionText>/);
+    throw new Error(m ? m[1].trim() : `HTTP ${resp.status}`);
+  }
+  const tiff = await GeoTIFF.fromArrayBuffer(await resp.arrayBuffer());
+  const image = await tiff.getImage();
+  return { image, bands: await image.readRasters() };
+}
+
+// windows (start..end inclusive) that contain an instant, in ascending order: the band order of a STACK response
+const windowsContaining = (iso) => windows.filter((w) => w.start <= iso && iso <= w.end);
+
+// ---------- presentation helpers ------------------------------------------------------------------
+function setStatus(text, kind = "") { const s = $("status"); s.textContent = text; s.className = kind; }
+
+function showRequest(url) {
+  const abs = new URL(url, location.href).href;
+  $("reqUrl").textContent = abs;
+  for (const id of ["reqOpen", "reqDownload", "btnCopy"]) $(id).hidden = false;
+  $("reqOpen").href = abs;
+  $("reqDownload").href = abs;
+  $("reqDownload").download = "chlorophyll.tif";
+}
+
+function colour(v) {
+  const t = Math.min(1, Math.max(0, (Math.log10(v) - LOG_MIN) / (LOG_MAX - LOG_MIN)));
+  const x = t * (VIRIDIS.length - 1), i = Math.min(VIRIDIS.length - 2, Math.floor(x)), f = x - i;
+  const a = hex(VIRIDIS[i]), b = hex(VIRIDIS[i + 1]);
+  return [0, 1, 2].map((k) => Math.round(a[k] + (b[k] - a[k]) * f));
+}
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dayLabel = (iso) => `${iso.slice(8, 10)} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`;   // UTC, locale-independent
+const windowLabel = (w) => `${dayLabel(w.start)} – ${dayLabel(w.end)} ${w.start.slice(0, 4)}`;
+const median = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
+
+// ---------- map ------------------------------------------------------------------------------------
+const map = L.map("map", { minZoom: 3, maxZoom: 11 }).fitBounds([[EXTENT.s, EXTENT.w], [EXTENT.n, EXTENT.e]], { padding: [12, 12] });
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19, attribution: "&copy; OpenStreetMap contributors",
+}).addTo(map);
+L.rectangle([[EXTENT.s, EXTENT.w], [EXTENT.n, EXTENT.e]], { color: "#0b6e7f", weight: 1.5, dashArray: "5 5", fill: false, interactive: false })
+  .addTo(map).bindTooltip("Coverage extent");
+$("legendBar").style.background = `linear-gradient(to right, ${VIRIDIS.join(",")})`;
+
+function viewBbox() {
+  const b = map.getBounds();
+  const bbox = { w: Math.max(EXTENT.w, b.getWest()), e: Math.min(EXTENT.e, b.getEast()),
+                 s: Math.max(EXTENT.s, b.getSouth()), n: Math.min(EXTENT.n, b.getNorth()) };
+  return bbox.w < bbox.e && bbox.s < bbox.n ? bbox : null;
+}
+
+async function renderMap() {
+  if (busy || !windows.length) return;
+  const w = windows[$("window").value];
+  const bbox = viewBbox();
+  if (!bbox) { setStatus("Pan the map to the dashed coverage box first.", "error"); return; }
+  const size = map.getSize();
+  const nx = Math.max(1, Math.min(MAX_PX, size.x, Math.round((bbox.e - bbox.w) / CELL)));
+  const ny = Math.max(1, Math.min(MAX_PX, size.y, Math.round((bbox.n - bbox.s) / CELL)));
+  busy = true; $("btnMap").disabled = true; setStatus(`Requesting ${windowLabel(w)} for this view…`);
+  try {
+    const { image, bands } = await fetchCoverage(getCoverageUrl({ bbox, time: w.start, size: [nx, ny] }));
+    const containing = windowsContaining(w.start);
+    const band = containing.findIndex((c) => c.start === w.start);
+    if (bands.length !== containing.length || band < 0) throw new Error(`expected ${containing.length} band(s), got ${bands.length}`);
+    const data = bands[band], width = image.getWidth(), height = image.getHeight();
+    const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext("2d"), px = ctx.createImageData(width, height);
+    const valid = [];
+    for (let i = 0; i < data.length; i++) {
+      const v = data[i];
+      if (v === NODATA || !Number.isFinite(v) || v <= 0) continue;
+      valid.push(v);
+      const [r, g, b] = colour(v);
+      px.data.set([r, g, b, 235], i * 4);
+    }
+    ctx.putImageData(px, 0, 0);
+    const [minx, miny, maxx, maxy] = image.getBoundingBox();
+    if (overlay) map.removeLayer(overlay);
+    overlay = L.imageOverlay(canvas.toDataURL(), [[miny, minx], [maxy, maxx]], { className: "chl-layer", interactive: false }).addTo(map);
+    const share = (100 * valid.length / data.length).toFixed(0);
+    $("mapStats").textContent = valid.length
+      ? `${width}×${height} cells · ${share}% with data · median ${median(valid).toFixed(2)} mg m⁻³`
+      : `${width}×${height} cells · no valid data in this view for this window (cloud/land).`;
+    setStatus(`Map loaded: ${windowLabel(w)}.`, "ok");
+  } catch (err) {
+    setStatus(`Map request failed: ${err.message}`, "error");
+  } finally {
+    busy = false; $("btnMap").disabled = false;
+  }
+}
+
+let moveTimer = null;
+map.on("moveend", () => {
+  if (!$("auto").checked) return;
+  clearTimeout(moveTimer); moveTimer = setTimeout(renderMap, 450);
+});
+
+// ---------- time series ------------------------------------------------------------------------------
+map.on("click", (e) => showSeries(e.latlng));
+
+async function showSeries(latlng) {
+  const { lat, lng } = latlng;
+  if (lng < EXTENT.w || lng > EXTENT.e || lat < EXTENT.s || lat > EXTENT.n) {
+    setStatus("That point is outside the coverage area (dashed box).", "error"); return;
+  }
+  seriesPoint = latlng;
+  if (marker) map.removeLayer(marker);
+  marker = L.circleMarker(latlng, { radius: 6, color: "#f59e0b", weight: 3, fillOpacity: 0.2 }).addTo(map);
+  setStatus(`Requesting the time series at ${lat.toFixed(3)}°, ${lng.toFixed(3)}°…`);
+  try {
+    const url = getCoverageUrl({ point: latlng, time: windows[0].start, timeEnd: windows[windows.length - 1].end });
+    const { bands } = await fetchCoverage(url);
+    if (bands.length !== windows.length) throw new Error(`expected ${windows.length} bands, got ${bands.length}`);
+    const values = bands.map((b) => (b[0] === NODATA || !Number.isFinite(b[0]) ? null : b[0]));
+    drawSeries(values, lat, lng);
+    const n = values.filter((v) => v !== null).length;
+    setStatus(`Time series loaded: ${n} of ${values.length} windows have data at this cell.`, "ok");
+  } catch (err) {
+    setStatus(`Time-series request failed: ${err.message}`, "error");
+  }
+}
+
+function drawSeries(values, lat, lng) {
+  const current = Number($("window").value);
+  const W = 360, H = 190, PL = 40, PR = 10, PT = 14, PB = 46;
+  const max = Math.max(0.1, ...values.filter((v) => v !== null)) * 1.15;
+  const x = (i) => PL + (values.length === 1 ? (W - PL - PR) / 2 : (i * (W - PL - PR)) / (values.length - 1));
+  const y = (v) => PT + (H - PT - PB) * (1 - v / max);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Chlorophyll-a time series at ${lat.toFixed(3)}, ${lng.toFixed(3)}">`;
+  for (const f of [0, 0.5, 1]) {
+    const v = max * f;
+    svg += `<line x1="${PL}" x2="${W - PR}" y1="${y(v)}" y2="${y(v)}" stroke="#e3ebee"/>`;
+    svg += `<text x="${PL - 4}" y="${y(v) + 4}" font-size="10" text-anchor="end" fill="#4d6670">${v.toFixed(v < 1 ? 2 : 1)}</text>`;
+  }
+  let path = "", pen = false;
+  values.forEach((v, i) => { if (v === null) { pen = false; return; } path += `${pen ? "L" : "M"}${x(i)},${y(v)}`; pen = true; });
+  svg += `<path d="${path}" fill="none" stroke="#0b6e7f" stroke-width="2"/>`;
+  values.forEach((v, i) => {
+    const cur = i === current;
+    svg += v === null
+      ? `<text x="${x(i)}" y="${H - PB + 2}" font-size="9" text-anchor="middle" fill="#9aaeb5">×</text>`
+      : `<circle cx="${x(i)}" cy="${y(v)}" r="${cur ? 5 : 3}" fill="${cur ? "#f59e0b" : "#0b6e7f"}"><title>${windowLabel(windows[i])}: ${v.toFixed(3)} mg m⁻³</title></circle>`;
+    if (i % 2 === 0 || cur) svg += `<text x="${x(i)}" y="${H - PB + 16}" font-size="9" text-anchor="end" transform="rotate(-45 ${x(i)} ${H - PB + 16})" fill="${cur ? "#0f2a33" : "#4d6670"}">${dayLabel(windows[i].start)}</text>`;
+  });
+  svg += `<text x="${PL}" y="${H - 2}" font-size="9.5" fill="#4d6670">× = no data (cloud, land or no pass) · window start dates</text></svg>`;
+  $("chart").innerHTML = svg;
+  const body = $("series").querySelector("tbody");
+  body.innerHTML = values.map((v, i) =>
+    `<tr${i === current ? ' class="current"' : ""}><td>${windowLabel(windows[i])}</td>` +
+    (v === null ? `<td class="num nodata">no data</td>` : `<td class="num">${v.toFixed(3)}</td>`) + `</tr>`).join("");
+  $("series").hidden = false;
+  $("seriesHint").textContent = `Cell nearest ${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E. Highlighted: the window selected above.`;
+}
+
+// ---------- start-up -----------------------------------------------------------------------------------
+$("btnMap").addEventListener("click", renderMap);
+$("window").addEventListener("change", () => { renderMap(); if (seriesPoint) showSeries(seriesPoint); });
+$("btnCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("reqUrl").textContent); setStatus("Request URL copied.", "ok"); }
+  catch { setStatus("Copy failed: select the URL and copy it manually.", "error"); }
+});
+$("lnkCaps").href = new URL(`${OWS}?${wcsParams({ request: "GetCapabilities" })}`, location.href).href;
+$("lnkDesc").href = new URL(`${OWS}?${wcsParams({ request: "DescribeCoverage", coverageId: COVERAGE })}`, location.href).href;
+
+(async function init() {
+  try {
+    const resp = await fetch("windows.json");
+    windows = await resp.json();
+    if (!windows.length) throw new Error("no composite windows are published");
+    $("window").innerHTML = windows.map((w, i) => `<option value="${i}">${windowLabel(w)}</option>`).join("");
+    const preferred = windows.findIndex((w) => w.start.startsWith("2025-08-17"));
+    $("window").value = String(preferred >= 0 ? preferred : windows.length - 1);
+    $("factWindows").textContent = `${windows.length} composites, ${dayLabel(windows[0].start)} ${windows[0].start.slice(0, 4)} – ${windowLabel(windows[windows.length - 1]).split(" – ")[1]}`;
+    await renderMap();
+    showSeries(L.latLng(10.0, 75.5));
+  } catch (err) {
+    setStatus(`Could not start: ${err.message}`, "error");
+  }
+})();
+</script>
+</body>
+</html>
