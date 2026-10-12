@@ -107,6 +107,10 @@ def main() -> int:
     def windows_containing(instant):
         return [k for k in range(len(starts)) if starts[k] <= instant <= ends[k]]
 
+    def matching(band, truth):
+        """Windows whose cube values equal a returned band: says what a mismatching band actually holds."""
+        return [w for w in range(truth.shape[0]) if np.allclose(band, truth[w], atol=1e-4)]
+
     # ---- discovery ----------------------------------------------------------------------------
     @check("WCS 2.0.1 GetCapabilities: service identification, operations, coverage listed")
     def _():
@@ -159,7 +163,9 @@ def main() -> int:
                 data, profile, bounds = tiff(gc(*subsets(edges), f'time("{iso(instant)}")'))
                 need(data.shape[0] == len(bands), f"{name} window {k}: {data.shape[0]} bands, expected {len(bands)}")
                 for b, w in enumerate(bands):
-                    need(np.allclose(data[b], truth[w], atol=1e-4), f"{name} window {w} differs from the cube")
+                    need(np.allclose(data[b], truth[w], atol=1e-4),
+                         f"{name} window {w} differs from the cube (at {iso(instant)} band {b} of {bands} "
+                         f"matches windows {matching(data[b], truth)})")
                 need(profile["nodata"] == NODATA and profile["crs"].to_epsg() == 4326, "profile")
                 checked += 1
         need(checked == len(SITES) * len(starts), checked)
@@ -172,7 +178,8 @@ def main() -> int:
                 bands = windows_containing(instant)
                 data, _, _ = tiff(gc(*subsets(edges), f'time("{iso(instant)}")'))
                 need(data.shape[0] == len(bands) and all(np.allclose(data[b], truth[w], atol=1e-4) for b, w in enumerate(bands)),
-                     f"boundary {iso(instant)}")
+                     f"boundary {iso(instant)}: expected windows {bands}, bands match "
+                     f"{[matching(band, truth) for band in data]}")
 
     @check("time series at a point (one cell, whole season): one band per window, ascending, equal to the cube")
     def _():
@@ -181,7 +188,9 @@ def main() -> int:
             data, _, _ = tiff(gc(f"Long({lon[i]:.9f})", f"Lat({lat[j]:.9f})", f'time("{iso(starts[0])}","{iso(ends[-1])}")'))
             expect = np.where(np.isnan(cube.chl.values[:, j, i]), NODATA, cube.chl.values[:, j, i])
             need(data.shape == (len(starts), 1, 1), f"{name}: {data.shape}")
-            need(np.allclose(data[:, 0, 0], expect, atol=1e-4), f"{name}: series differs from the cube")
+            bad = [k for k in range(len(starts)) if not np.isclose(data[k, 0, 0], expect[k], atol=1e-4)]
+            need(not bad, f"{name}: series differs from the cube at windows {bad}: "
+                          f"{[(float(data[k, 0, 0]), float(expect[k])) for k in bad]}")
 
     @check("a date in the one-day hole between windows is an error, never silent data")
     def _():
