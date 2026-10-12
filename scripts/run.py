@@ -2,6 +2,7 @@
 
     python scripts/run.py              # local:  http://127.0.0.1:8090  (UI)  and  .../geoserver/ows  (WCS)
     python scripts/run.py --public     # also a public https URL through an SSH tunnel (localhost.run)
+    python scripts/run.py --host 0.0.0.0 --port 7860 --public-url https://example.hf.space   # hosted (container)
 
 Ctrl+C stops the gateway and the tunnel (GeoServer keeps running; `python scripts/geoserver.py stop` stops it).
 The public URL is written to data/public_url.txt. Free localhost.run tunnels get a NEW random address when they
@@ -120,17 +121,29 @@ class Tunnel:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--public", action="store_true", help="also publish through an SSH tunnel (localhost.run)")
+    exposure = ap.add_mutually_exclusive_group()
+    exposure.add_argument("--public", action="store_true", help="also publish through an SSH tunnel (localhost.run)")
+    exposure.add_argument("--public-url", help="the fixed public address this deployment is reached at (hosting "
+                                               "platforms); advertised in the WCS capabilities links, no tunnel")
+    ap.add_argument("--host", default="127.0.0.1", help="interface the gateway listens on (0.0.0.0 in a container)")
     ap.add_argument("--port", type=int, default=8090, help="gateway / web UI port (default 8090)")
     ap.add_argument("--geoserver-port", type=int, default=gs.DEFAULT_PORT)
     args = ap.parse_args()
+    if args.public_url is not None and not re.match(r"^https?://[^/\s]+$", args.public_url.rstrip("/")):
+        ap.error(f"--public-url must look like https://host (got {args.public_url!r})")
 
     ensure_mosaic()
     ensure_geoserver(args.geoserver_port)
     app = gateway.make_app(f"http://127.0.0.1:{args.geoserver_port}", MOSAIC)
-    server = waitress.create_server(app, listen=f"127.0.0.1:{args.port}", threads=16)
+    # GeoServer itself always stays on 127.0.0.1; only the WCS-only gateway is ever exposed
+    server = waitress.create_server(app, listen=f"{args.host}:{args.port}", threads=16)
     threading.Thread(target=server.run, daemon=True).start()
-    log(f"web UI and WCS gateway: http://127.0.0.1:{args.port}/  (WCS only; GeoServer admin stays private)")
+    log(f"web UI and WCS gateway: http://{args.host}:{args.port}/  (WCS only; GeoServer admin stays private)")
+    if args.public_url:
+        url = args.public_url.rstrip("/")
+        gs.set_proxy_base_url(DATA_DIR, f"{url}/geoserver", args.geoserver_port)
+        URL_FILE.write_text(url + "\n", encoding="utf8")
+        log(f"PUBLIC URL:  {url}/   (WCS: {url}/geoserver/ows?service=WCS&request=GetCapabilities&version=2.0.1)")
 
     tunnel = None
     if args.public:

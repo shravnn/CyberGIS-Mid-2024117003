@@ -67,8 +67,13 @@ def start(data_dir: Path, port: int = DEFAULT_PORT, log_path: Path | None = None
     data_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_path or data_dir.parent / f"geoserver-{port}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    # GeoTools unpacks its EPSG database into java.io.tmpdir; a temp folder shared by several GeoServers on one
+    # machine gets corrupted when they start/stop concurrently ("No code EPSG:4326"), so each instance gets its own
+    tmp_dir = data_dir.parent / f"tmp-{port}"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         _java(), "-Xms256m", f"-Xmx{memory_mb}m", f"-DGEOSERVER_DATA_DIR={data_dir}", "-Djava.awt.headless=true",
+        f"-Djava.io.tmpdir={tmp_dir}",
         "-Duser.timezone=UTC",  # the machine's local zone otherwise shifts the time envelope (IST: -5:30)
         # start.ini fixes the port and host, so -D system properties are ignored: pass them as arguments
         "-jar", "start.jar", f"jetty.http.port={port}", "jetty.http.host=127.0.0.1",
