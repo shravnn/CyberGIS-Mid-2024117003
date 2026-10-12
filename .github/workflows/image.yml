@@ -37,7 +37,15 @@ jobs:
           docker logs wcs; exit 1
 
       - name: Live WCS checks (protocol, all windows pixel-exact against the cube, admin not exposed)
-        run: docker exec wcs python scripts/check_live.py http://localhost:8000/geoserver --public --max-seconds 15
+        run: |
+          set +e
+          docker exec wcs python scripts/check_live.py http://localhost:8000/geoserver --public --max-seconds 15 \
+            > checks.txt 2>&1
+          status=$?
+          cat checks.txt
+          # failed checks also become annotations, visible on the run page without opening the log
+          grep -E "^(FAIL|Traceback)|Error" checks.txt | head -10 | while IFS= read -r line; do echo "::error title=live check::$line"; done
+          exit $status
 
       - name: Web UI and advertised address
         run: |
@@ -48,7 +56,12 @@ jobs:
 
       - name: Container log
         if: always()
-        run: docker logs wcs || true
+        run: |
+          docker logs wcs > container.txt 2>&1 || true
+          cat container.txt
+          if [ "${{ job.status }}" != "success" ]; then
+            tail -n 8 container.txt | while IFS= read -r line; do echo "::warning title=container log::$line"; done
+          fi
 
       - name: Publish
         run: |
