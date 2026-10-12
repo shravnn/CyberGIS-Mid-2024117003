@@ -151,7 +151,7 @@ script detects it and re-points everything automatically.
 |---|---|
 | Web UI | `https://<public-host>/` |
 | WCS endpoint | `https://<public-host>/geoserver/ows?service=WCS&version=2.0.1&request=GetCapabilities` |
-| Verified | 2026-10-12, at `https://4ceb5f59bebed5.lhr.life`: **15/15 live checks passed** through the public URL (all 17 windows pixel-exact, security checks included) |
+| Verified | 2026-10-12, at `https://0a3cb267792727.lhr.life`: **15/15 live checks passed** through the public URL (all 17 windows pixel-exact, security checks included) |
 
 ## 5. Service design
 
