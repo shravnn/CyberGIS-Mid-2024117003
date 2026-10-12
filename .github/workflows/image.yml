@@ -1,0 +1,57 @@
+# Builds the service's container image, runs the live WCS checks against it, and publishes it to
+# ghcr.io/shravnn/cybergis-mid-2024117003 (the image the hosted deployment runs).
+name: container image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/shravnn/cybergis-mid-2024117003
+
+jobs:
+  build-check-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+
+      - name: Start the container
+        run: |
+          docker run -d --name wcs -p 8000:8000 -e PUBLIC_URL=http://localhost:8000 "$IMAGE:latest"
+          start=$(date +%s)
+          for i in $(seq 1 120); do
+            if curl -fs -o /dev/null "http://localhost:8000/geoserver/ows?service=WCS&request=GetCapabilities&version=2.0.1"; then
+              echo "ready after $(( $(date +%s) - start ))s"; exit 0
+            fi
+            sleep 2
+          done
+          docker logs wcs; exit 1
+
+      - name: Live WCS checks (protocol, all windows pixel-exact against the cube, admin not exposed)
+        run: docker exec wcs python scripts/check_live.py http://localhost:8000/geoserver --public --max-seconds 15
+
+      - name: Web UI and advertised address
+        run: |
+          curl -fs -o /dev/null http://localhost:8000/
+          curl -fs http://localhost:8000/windows.json | head -c 200; echo
+          curl -fs "http://localhost:8000/geoserver/ows?service=WCS&request=GetCapabilities&version=2.0.1" \
+            | grep -q 'http://localhost:8000/geoserver/'
+
+      - name: Container log
+        if: always()
+        run: docker logs wcs || true
+
+      - name: Publish
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"

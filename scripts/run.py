@@ -2,13 +2,14 @@
 
     python scripts/run.py              # local:  http://127.0.0.1:8090  (UI)  and  .../geoserver/ows  (WCS)
     python scripts/run.py --public     # also a public https URL through an SSH tunnel (localhost.run)
-    python scripts/run.py --host 0.0.0.0 --port 7860 --public-url https://example.hf.space   # hosted (container)
+    python scripts/run.py --hosted     # in the container image: 0.0.0.0:$PORT (8000), the platform's public address
 
 Ctrl+C stops the gateway and the tunnel (GeoServer keeps running; `python scripts/geoserver.py stop` stops it).
 The public URL is written to data/public_url.txt. Free localhost.run tunnels get a NEW random address when they
 reconnect; this script notices, points GeoServer's capabilities links at the new address and records it.
 """
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -30,6 +31,16 @@ CUBE = ROOT / "data" / "processed" / "ocm_gac_chl_8day.nc"
 LOG = ROOT / "data" / "geoserver" / "geoserver.log"
 URL_FILE = ROOT / "data" / "public_url.txt"
 TUNNEL_LINE = re.compile(r"tunneled with tls termination, (https://[A-Za-z0-9.-]+)")
+HOSTED_PORT = 8000
+
+
+def platform_url(env) -> str | None:
+    """The public address a hosting platform gives this container, from the variables the platform sets."""
+    if env.get("PUBLIC_URL"):
+        return env["PUBLIC_URL"]
+    if env.get("CONTAINER_APP_NAME") and env.get("CONTAINER_APP_ENV_DNS_SUFFIX"):   # Azure Container Apps
+        return f"https://{env['CONTAINER_APP_NAME']}.{env['CONTAINER_APP_ENV_DNS_SUFFIX']}"
+    return None
 
 
 def log(msg: str) -> None:
@@ -125,10 +136,20 @@ def main() -> None:
     exposure.add_argument("--public", action="store_true", help="also publish through an SSH tunnel (localhost.run)")
     exposure.add_argument("--public-url", help="the fixed public address this deployment is reached at (hosting "
                                                "platforms); advertised in the WCS capabilities links, no tunnel")
+    ap.add_argument("--hosted", action="store_true",
+                    help=f"run as a hosted container: listen on 0.0.0.0:$PORT (default {HOSTED_PORT}) and advertise "
+                         "the public address from PUBLIC_URL or the platform's variables (Azure Container Apps)")
     ap.add_argument("--host", default="127.0.0.1", help="interface the gateway listens on (0.0.0.0 in a container)")
-    ap.add_argument("--port", type=int, default=8090, help="gateway / web UI port (default 8090)")
+    ap.add_argument("--port", type=int, help="gateway / web UI port (default 8090)")
     ap.add_argument("--geoserver-port", type=int, default=gs.DEFAULT_PORT)
     args = ap.parse_args()
+    if args.hosted:
+        if args.public:
+            ap.error("--hosted runs on the platform's address; it cannot be combined with --public")
+        args.host = "0.0.0.0"
+        args.port = args.port or int(os.environ.get("PORT", HOSTED_PORT))
+        args.public_url = args.public_url or platform_url(os.environ)
+    args.port = args.port or 8090
     if args.public_url is not None and not re.match(r"^https?://[^/\s]+$", args.public_url.rstrip("/")):
         ap.error(f"--public-url must look like https://host (got {args.public_url!r})")
 
@@ -144,6 +165,8 @@ def main() -> None:
         gs.set_proxy_base_url(DATA_DIR, f"{url}/geoserver", args.geoserver_port)
         URL_FILE.write_text(url + "\n", encoding="utf8")
         log(f"PUBLIC URL:  {url}/   (WCS: {url}/geoserver/ows?service=WCS&request=GetCapabilities&version=2.0.1)")
+    elif args.hosted:
+        log("no PUBLIC_URL or platform address found: capabilities links follow the request's Host header")
 
     tunnel = None
     if args.public:

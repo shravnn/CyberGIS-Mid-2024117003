@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+.cache
+.pytest_cache
+**/__pycache__
+*.egg-info
+Datasets
+tools
+data/raw
+data/wcs
+data/geoserver
+data/public_url.txt
+docs/images
