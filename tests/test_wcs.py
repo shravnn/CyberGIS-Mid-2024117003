@@ -1,5 +1,7 @@
 """WCS conformance of the deployed service: boots a real GeoServer on fabricated data with known pixel values."""
 import re
+import sqlite3
+from contextlib import closing
 from xml.etree import ElementTree as ET
 
 import numpy as np
@@ -66,6 +68,13 @@ def grid(window, lons, lats):
 
 
 # ---- GetCapabilities --------------------------------------------------------------------------
+def test_mosaic_index_holds_the_windows_oldest_first(service):
+    # overlapping windows are stacked in index order, so a time series is only ascending if the index is
+    with closing(sqlite3.connect(service.parent.parent / "mosaic" / "chl_index.gpkg")) as db:
+        times = [t for (t,) in db.execute("SELECT time FROM chl ORDER BY fid")]
+    assert len(times) == 4 and times == sorted(times)
+
+
 def test_wcs201_capabilities_identify_service_and_operations(service):
     r = ows(service="WCS", request="GetCapabilities", version="2.0.1")
     assert r.status_code == 200

@@ -158,6 +158,37 @@ def _authenticate(port: int, data_dir: Path) -> tuple[str, str]:
     raise GeoServerError("cannot authenticate to GeoServer REST with the stored or default admin password")
 
 
+def granules_oldest_first(mosaic_dir: Path) -> list[Path]:
+    # file names start with the window start (chl_<start>_<end>.tif), so name order is time order
+    return sorted(Path(mosaic_dir).glob("chl_*.tif"))
+
+
+def _create_mosaic_store(rest: Rest, mosaic_dir: Path) -> None:
+    """Create the ImageMosaic store with its granules indexed oldest first.
+
+    STACK returns overlapping granules in index order, and a directory harvest indexes files in the file system's
+    listing order: alphabetical on Windows, arbitrary on Linux, where it scrambled the bands of a time series. The
+    SORTING parameter does not change that order. So the store starts from the earliest window alone (the others
+    wait outside the mosaic folder) and the rest are harvested one by one, in time order.
+    """
+    granules = granules_oldest_first(mosaic_dir)
+    path = f"/workspaces/{WORKSPACE}/coveragestores/{STORE}/external.imagemosaic"
+    waiting = mosaic_dir.parent / f"{mosaic_dir.name}-pending"
+    waiting.mkdir(exist_ok=True)
+    try:
+        for g in granules[1:]:
+            g.replace(waiting / g.name)
+        rest.call("PUT", path, data=mosaic_dir.as_posix(), headers={"Content-Type": "text/plain"})
+        for g in granules[1:]:
+            (waiting / g.name).replace(g)
+            rest.call("POST", path, data=g.as_posix(), headers={"Content-Type": "text/plain"}, ok=(200, 201, 202))
+    finally:
+        for g in granules:
+            if (waiting / g.name).exists():
+                (waiting / g.name).replace(g)
+        waiting.rmdir()
+
+
 def configure(mosaic_dir: Path, data_dir: Path, port: int = DEFAULT_PORT, secure: bool = True) -> None:
     """Idempotent: create workspace, mosaic store, coverage, time dimension, WCS metadata; then lock the admin password."""
     mosaic_dir = Path(mosaic_dir).resolve()
@@ -176,8 +207,7 @@ def configure(mosaic_dir: Path, data_dir: Path, port: int = DEFAULT_PORT, secure
         for stale in mosaic_dir.glob(pattern):
             if stale.is_file():
                 stale.unlink()
-    rest.call("PUT", f"/workspaces/{WORKSPACE}/coveragestores/{STORE}/external.imagemosaic",
-              data=mosaic_dir.as_posix(), headers={"Content-Type": "text/plain"})
+    _create_mosaic_store(rest, mosaic_dir)
 
     coverage = {"coverage": {
         "name": COVERAGE, "nativeName": COVERAGE, "enabled": True,

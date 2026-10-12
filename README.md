@@ -15,7 +15,7 @@ public gateway, a reproducible data pipeline, and an automated verification suit
 | **README** | This file: the gap, the service design, the implementation choices, scope and future work |
 | **Live demo** | The web UI at `/` and the WCS endpoint at `/geoserver/ows` accept real HTTP requests from any browser, `curl`, QGIS or GDAL |
 | **Gap evidence** | [`docs/gap-evidence.md`](docs/gap-evidence.md) with a dated, reproducible probe log ([`docs/gap-probes.json`](docs/gap-probes.json)) |
-| **Verification** | 114 automated tests (`pytest`) and 15 live checks against the running service (`scripts/check_live.py`) |
+| **Verification** | 126 automated tests (`pytest`) and 15 live checks against the running service (`scripts/check_live.py`) |
 
 ## Contents
 1. [The problem: what a developer faces today](#1-the-problem-what-a-developer-faces-today) ·
@@ -202,6 +202,7 @@ The test suite drove several design decisions, each now guarded by a test:
 |---|---|
 | A shapefile mosaic index stores dates only (no time of day) | GeoPackage index with `java.sql.Timestamp` |
 | A flat mosaic blends overlapping windows into one image | `MergeBehavior=STACK`: one band per window |
+| Stacked bands follow the mosaic index order, and a folder scan indexes files in the file system's order (differs between Windows and Linux) | the store is created from the earliest window and the others are harvested one by one, oldest first: identical, ascending band order on every OS |
 | GeoServer's default band description is generic (`GRAY_INDEX`) | explicit coverage dimension: name, unit, nil value |
 | A partial REST settings update resets unspecified settings | read-modify-write for every settings update |
 | A host's local timezone shifts time envelopes | JVM forced to UTC |
@@ -228,12 +229,12 @@ of the deployment is demonstrated by tests that boot a real GeoServer and exerci
 | Data correctness | **every window at four sites equals the cube through WCS**, and the cube equals the **original Bhoonidhi files** (independent decode) |
 | Deployment and security | loopback-only server, factory admin password rejected after restart, gateway refuses admin/REST/other services/other methods, request-size limits, the web UI's requests and JavaScript |
 
-**Results:** `pytest` runs **114 tests, all green** (one is an expected-failure guard tracking a GeoServer WCS 1.1.1
+**Results:** `pytest` runs **126 tests, all green** (one is an expected-failure guard tracking a GeoServer WCS 1.1.1
 axis-order behaviour). `scripts/check_live.py` runs **15 requirement checks against a live URL**: 15/15 on the public
 deployment.
 
 ```bash
-python -m pytest -q                                              # 114 tests
+python -m pytest -q                                              # 126 tests
 python scripts/check_live.py http://127.0.0.1:8080/geoserver      # 13 checks, local
 python scripts/check_live.py https://<public-host>/geoserver --public   # 15 checks, public
 ```
@@ -272,17 +273,21 @@ On the first run `run.py` builds the GeoTIFF mosaic from the committed cube, sta
 | `src/chlwcs/gateway.py` | The public entry point: serves the web UI and `/windows.json`, forwards WCS requests only |
 | `src/chlwcs/web/index.html` | The web UI (Leaflet map, geotiff.js decoding, time-series chart, request viewer) |
 | `src/chlwcs/__init__.py` | Selects rasterio's bundled PROJ/GDAL data for the process |
-| `scripts/run.py` | One command to run everything: mosaic, GeoServer, gateway, optional self-healing public tunnel |
+| `scripts/run.py` | One command to run everything: mosaic, GeoServer, gateway; `--hosted` for the container, `--public` for a self-healing tunnel |
 | `scripts/prep_data.py` | Data preparation: Bhoonidhi zips → cube → GeoTIFF mosaic, with a per-window summary |
 | `scripts/geoserver.py` | GeoServer control: `start`, `configure`, `status`, `stop`, `proxy-url` |
 | `scripts/check_live.py` | Requirement checks against any running deployment, comparing returned pixels with the cube |
 | `scripts/probe_gap.py` | Re-runs the dated gap probes and writes `docs/gap-probes.json` |
 | `scripts/inspect_product.py` | Prints the structure of a Bhoonidhi product (time variable, packing, grid) |
+| `Dockerfile`, `.dockerignore` | The container image of the whole service (GeoServer configured at build time, the gateway on port 8000) |
+| `.github/workflows/image.yml` | Builds the image, runs the 15 live checks against the running container, publishes it to `ghcr.io` |
 | `tests/test_ingest.py` | Product-name parsing, grid reconstruction, cube building |
 | `tests/test_geotiff.py` | GeoTIFF georeferencing, orientation, values, nodata, metadata; mosaic index configuration |
-| `tests/test_wcs.py` | WCS conformance on a freshly booted GeoServer with known pixel values (41 tests) |
+| `tests/test_wcs.py` | WCS conformance on a freshly booted GeoServer with known pixel values (42 tests) |
 | `tests/test_gateway.py` | Gateway allow-list, web UI, `/windows.json`, UI request shapes, JavaScript syntax (47 tests) |
 | `tests/test_real_data.py` | The real cube against the original Bhoonidhi files |
+| `tests/test_mosaic_store.py` | The mosaic index is built oldest first regardless of file system order |
+| `tests/test_run.py` | The runner's hosted mode and the container image recipe |
 | `tests/helpers.py`, `tests/conftest.py` | Synthetic Bhoonidhi-shaped products and the shared GeoServer fixture |
 | `data/processed/ocm_gac_chl_8day.nc` | The prepared cube (17 windows, 15 MB) |
 | `docs/gap-evidence.md`, `docs/gap-probes.json` | Gap evidence and the dated probe log |
