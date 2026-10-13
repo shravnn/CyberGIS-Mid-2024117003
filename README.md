@@ -11,7 +11,7 @@ public gateway, a reproducible data pipeline, and an automated verification suit
 
 | Deliverable | Where |
 |---|---|
-| **Deployed service URL** | Public: published by `python scripts/run.py --public` (see [Live service](#4-live-service)). Local: `http://127.0.0.1:8090/` |
+| **Deployed service URL** | **https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/** (web UI) · WCS: `https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/geoserver/ows` (see [Live service](#4-live-service)). Local: `http://127.0.0.1:8090/` |
 | **README** | This file: the gap, the service design, the implementation choices, scope and future work |
 | **Live demo** | The web UI at `/` and the WCS endpoint at `/geoserver/ows` accept real HTTP requests from any browser, `curl`, QGIS or GDAL |
 | **Gap evidence** | [`docs/gap-evidence.md`](docs/gap-evidence.md) with a dated, reproducible probe log ([`docs/gap-probes.json`](docs/gap-probes.json)) |
@@ -137,21 +137,24 @@ Open `/` in a browser:
 
 ## 4. Live service
 
-The service is published from the host machine through a secure HTTPS tunnel by one command:
-
-```bash
-python scripts/run.py --public
-```
-
-It starts GeoServer and the gateway, opens the tunnel, configures GeoServer to advertise the public address in its
-capabilities links, prints the URL and saves it to `data/public_url.txt`. If the tunnel reconnects under a new address, the
-script detects it and re-points everything automatically.
+**https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/**
 
 | | |
 |---|---|
-| Web UI | `https://<public-host>/` |
-| WCS endpoint | `https://<public-host>/geoserver/ows?service=WCS&version=2.0.1&request=GetCapabilities` |
-| Verified | 2026-10-12, at `https://0a3cb267792727.lhr.life`: **15/15 live checks passed** through the public URL (all 17 windows pixel-exact, security checks included) |
+| Web UI | [https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/](https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/) |
+| WCS endpoint | [`https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/geoserver/ows?service=WCS&version=2.0.1&request=GetCapabilities`](https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/geoserver/ows?service=WCS&version=2.0.1&request=GetCapabilities) |
+| Example GetCoverage | [Kerala coast, 17–24 Aug 2025, GeoTIFF](https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/geoserver/ows?service=WCS&version=2.0.1&request=GetCoverage&coverageId=ocean__chl&format=image/tiff&subset=Long(74.5,76.5)&subset=Lat(9,11)&subset=time(%222025-08-20T00:00:00Z%22)) |
+| Hosting | Azure Container Apps, running the container image `ghcr.io/shravnn/cybergis-mid-2024117003` |
+
+The image is built from this repository by [`.github/workflows/image.yml`](.github/workflows/image.yml) on every push to
+`main`: it builds the [`Dockerfile`](Dockerfile), starts the container, runs the **15 live checks** of `scripts/check_live.py`
+against it (every window pixel-exact against the cube, security checks included) and only then publishes the image. Inside
+the container `run.py --hosted` serves the gateway on port 8000 and advertises the platform's public address in the WCS
+capabilities links; GeoServer stays private on `127.0.0.1`. The host scales to zero when idle, so the first request after a
+quiet period takes a few seconds longer while the service starts.
+
+The same service can also be published from any machine through an HTTPS tunnel with one command,
+`python scripts/run.py --public` (it prints the public URL and follows address changes automatically).
 
 ## 5. Service design
 
@@ -164,7 +167,7 @@ script detects it and re-points everything automatically.
                                                         │
  Browser / QGIS / GDAL / curl ──► gateway.py (127.0.0.1:8090): web UI · /windows.json · WCS-only allow-list
                                                         │
-                                   run.py --public ──► HTTPS tunnel ──► public URL
+               Docker image (CI-checked) ──► Azure Container Apps ──► public HTTPS URL   (or run.py --public ──► tunnel)
 ```
 
 * **Data pipeline** (`ingest.py`, `geotiff.py`): turns the downloaded products into one cube with a correct UTC time axis, then
@@ -236,7 +239,7 @@ deployment.
 ```bash
 python -m pytest -q                                              # 126 tests
 python scripts/check_live.py http://127.0.0.1:8080/geoserver      # 13 checks, local
-python scripts/check_live.py https://<public-host>/geoserver --public   # 15 checks, public
+python scripts/check_live.py https://chlorophyll-wcs.jollysea-cbb662b3.malaysiawest.azurecontainerapps.io/geoserver --public   # 15 checks, public
 ```
 
 ## 8. Run it
@@ -301,8 +304,8 @@ On the first run `run.py` builds the GeoTIFF mosaic from the committed cube, sta
 * **More EOS-06 products.** The same pipeline extends to the other OCM-3 composites on Bhoonidhi (total suspended matter,
   aerosol optical depth, NDVI) as additional coverages.
 * **Encodings.** GeoTIFF and GML are served; NetCDF output can be added with GeoServer's NetCDF output extension.
-* **Hosting.** The service is published through `run.py --public`; the same configuration can be deployed to a cloud host or
-  container platform for a permanent address.
+* **Hosting.** The container image runs unchanged on any container platform (Azure Container Apps today; Cloud Run, ECS or
+  Kubernetes alike); a custom domain can be attached to the same deployment.
 * **Values.** Chlorophyll values are Bhoonidhi's level-3 product, served unmodified.
 
 ## 11. Data and attribution
